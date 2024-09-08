@@ -173,7 +173,6 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 
 		// Fetch remaining pages concurrently
 		for page := 2; page <= lastPage; page++ {
-			page := page
 			g.Go(func() error {
 				params := map[string]string{
 					paramPage: strconv.Itoa(page),
