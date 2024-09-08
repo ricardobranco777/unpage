@@ -292,10 +292,6 @@ func main() {
 	}
 	for _, header := range headerValues {
 		parts := strings.SplitN(header, ":", 2)
-		if len(parts) != 2 {
-			fmt.Fprintf(os.Stderr, "ERROR: Invalid header: %s\n", header)
-			os.Exit(1)
-		}
 		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
