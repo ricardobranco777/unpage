@@ -354,8 +354,8 @@ func TestGetPage(t *testing.T) {
 	params := map[string]string{}
 
 	client := &http.Client{
-                Timeout: time.Duration(1) * time.Second,
-        }
+		Timeout: time.Duration(1) * time.Second,
+	}
 
 	resp, err := getPage(ctx, client, urlStr, headers, params)
 	if err != nil {

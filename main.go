@@ -187,22 +187,21 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 					return err
 				}
 
-				var more []any
+				var entries []any
 				var ok bool
 				switch body := rawBody.(type) {
 				case map[string]any:
-					if more, ok = getNestedValue(body, dataKey).([]any); !ok {
+					if entries, ok = getNestedValue(body, dataKey).([]any); !ok {
 						return fmt.Errorf("unexpected type for dataKey")
 					}
 				case []any:
-					more = body
+					entries = body
 				default:
 					return fmt.Errorf("wrong type %T", body)
 				}
 
 				mu.Lock()
-				pages[page-1] = more
-				entries = append(entries, more...)
+				pages[page-1] = entries
 				mu.Unlock()
 				return nil
 			})
