@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -260,5 +261,111 @@ func TestUnpage_WithLastKey(t *testing.T) {
 	// Check if all entries were retrieved
 	if len(entries) != 6 {
 		t.Fatalf("Expected 6 entries, got %d", len(entries))
+	}
+}
+
+func TestGetNestedValue(t *testing.T) {
+	data := map[string]any{
+		"foo": map[string]any{
+			"bar": map[string]any{
+				"baz": "value",
+			},
+		},
+	}
+
+	tests := []struct {
+		key      string
+		expected any
+	}{
+		{"foo.bar.baz", "value"},
+		{"foo.bar", map[string]any{"baz": "value"}},
+		{"foo", map[string]any{"bar": map[string]any{"baz": "value"}}},
+		{"foo.baz", nil}, // key does not exist
+		{"not_existing", nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.key, func(t *testing.T) {
+			result := getNestedValue(data, test.key)
+
+			if !reflect.DeepEqual(result, test.expected) {
+				t.Errorf("getNestedValue(%q) = %v; want %v", test.key, result, test.expected)
+			}
+		})
+	}
+}
+func TestGetNextLastLinks(t *testing.T) {
+	tests := []struct {
+		header       string
+		expectedNext string
+		expectedLast string
+	}{
+		{
+			header:       `<https://example.com/page/2>; rel="next", <https://example.com/page/10>; rel="last"`,
+			expectedNext: "https://example.com/page/2",
+			expectedLast: "https://example.com/page/10",
+		},
+		{
+			header:       `<https://example.com/page/5>; rel="next"`,
+			expectedNext: "https://example.com/page/5",
+			expectedLast: "",
+		},
+		{
+			header:       `<https://example.com/page/5>; rel="last"`,
+			expectedNext: "",
+			expectedLast: "https://example.com/page/5",
+		},
+		{
+			header:       "",
+			expectedNext: "",
+			expectedLast: "",
+		},
+		{
+			header:       `<https://example.com/page/2>; rel="next", <https://example.com/page/5>; rel="prev"`,
+			expectedNext: "https://example.com/page/2",
+			expectedLast: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.header, func(t *testing.T) {
+			next, last := getNextLastLinks(tt.header)
+			if next != tt.expectedNext {
+				t.Errorf("expected next %q, got %q", tt.expectedNext, next)
+			}
+			if last != tt.expectedLast {
+				t.Errorf("expected last %q, got %q", tt.expectedLast, last)
+			}
+		})
+	}
+}
+
+func TestGetPage(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{"key": "value"}`)
+	})
+
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	ctx := context.Background()
+	urlStr := server.URL
+	headers := map[string]string{}
+	params := map[string]string{}
+	timeout := time.Duration(1)
+
+	resp, err := getPage(ctx, urlStr, headers, params, timeout)
+	if err != nil {
+		t.Fatalf("getPage returned an error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var result map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if result["key"] != "value" {
+		t.Errorf("Unexpected response body: got %v, want %v", result, map[string]any{"key": "value"})
 	}
 }
