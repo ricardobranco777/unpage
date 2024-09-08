@@ -70,10 +70,7 @@ func logResponse(resp *http.Response) {
 	}
 }
 
-func getPage(ctx context.Context, urlStr string, headers map[string]string, params map[string]string, timeout time.Duration) (*http.Response, error) {
-	client := &http.Client{
-		Timeout: timeout * time.Second,
-	}
+func getPage(ctx context.Context, client *http.Client, urlStr string, headers map[string]string, params map[string]string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
 		return nil, err
@@ -106,11 +103,14 @@ func getPage(ctx context.Context, urlStr string, headers map[string]string, para
 
 func unpage(ctx context.Context, urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string, timeout time.Duration) ([]any, error) {
 	// Fetch the first page
+	client := &http.Client{
+		Timeout: timeout * time.Second,
+	}
 	params := make(map[string]string)
 	if paramPage != "" {
 		params[paramPage] = "1"
 	}
-	resp, err := getPage(ctx, urlStr, headers, params, timeout)
+	resp, err := getPage(ctx, client, urlStr, headers, params)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 				params := map[string]string{
 					paramPage: strconv.Itoa(page),
 				}
-				resp, err := getPage(ctx, urlStr, headers, params, timeout)
+				resp, err := getPage(ctx, client, urlStr, headers, params)
 				if err != nil {
 					return err
 				}
@@ -227,7 +227,7 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 		if strings.HasPrefix(nextLink, "/") {
 			nextLink = fmt.Sprintf("%s://%s%s", resp.Request.URL.Scheme, resp.Request.URL.Host, nextLink)
 		}
-		resp, err := getPage(ctx, nextLink, headers, nil, timeout)
+		resp, err := getPage(ctx, client, nextLink, headers, nil)
 		if err != nil {
 			return nil, err
 		}

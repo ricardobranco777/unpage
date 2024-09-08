@@ -352,9 +352,12 @@ func TestGetPage(t *testing.T) {
 	urlStr := server.URL
 	headers := map[string]string{}
 	params := map[string]string{}
-	timeout := time.Duration(1)
 
-	resp, err := getPage(ctx, urlStr, headers, params, timeout)
+	client := &http.Client{
+                Timeout: time.Duration(1) * time.Second,
+        }
+
+	resp, err := getPage(ctx, client, urlStr, headers, params)
 	if err != nil {
 		t.Fatalf("getPage returned an error: %v", err)
 	}
