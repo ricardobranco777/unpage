@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -167,7 +166,6 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 		pages := make([][]any, lastPage)
 		pages[0] = entries
 
-		var mu sync.Mutex
 		g, ctx := errgroup.WithContext(ctx)
 		g.SetLimit(50)
 
@@ -200,9 +198,7 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 					return fmt.Errorf("wrong type %T", body)
 				}
 
-				mu.Lock()
 				pages[page-1] = entries
-				mu.Unlock()
 				return nil
 			})
 		}
