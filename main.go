@@ -278,7 +278,7 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.StringSliceVarP(&headerValues, "header", "H", nil, "HTTP header (may be specified multiple times")
-	flag.StringVarP(&paramPage, "param-page", "P", "page", "Name of the parameter that represents the page number")
+	flag.StringVarP(&paramPage, "param-page", "P", "", "Name of the parameter that represents the page number")
 	flag.StringVarP(&dataKey, "data-key", "D", "", "Key to access the data in the JSON response")
 	flag.StringVarP(&nextKey, "next-key", "N", "", "Key to access the next page link in the JSON response")
 	flag.StringVarP(&lastKey, "last-key", "L", "", "Key to access the last page link in the JSON response")
