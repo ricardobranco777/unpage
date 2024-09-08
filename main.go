@@ -17,8 +17,8 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"github.com/tomnomnom/linkheader"
+	"golang.org/x/sync/errgroup"
 )
 
 import flag "github.com/spf13/pflag"
@@ -106,7 +106,11 @@ func getPage(ctx context.Context, urlStr string, headers map[string]string, para
 
 func unpage(ctx context.Context, urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string, timeout time.Duration) ([]any, error) {
 	// Fetch the first page
-	resp, err := getPage(ctx, urlStr, headers, nil, timeout)
+	params := make(map[string]string)
+	if paramPage != "" {
+		params[paramPage] = "1"
+	}
+	resp, err := getPage(ctx, urlStr, headers, params, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +129,12 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 			return nil, fmt.Errorf("unexpected type for dataKey")
 		}
 		// Pagination done via data
-		if nextKey != "" && lastKey != "" {
+		if nextKey != "" {
 			if nextLink, ok = getNestedValue(body, nextKey).(string); !ok {
 				return nil, fmt.Errorf("unexpected value for nextKey")
 			}
+		}
+		if lastKey != "" {
 			if lastLink, ok = getNestedValue(body, lastKey).(string); !ok {
 				return nil, fmt.Errorf("unexpected value for lastKey")
 			}
@@ -239,7 +245,12 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 				return nil, fmt.Errorf("unexpected type for dataKey")
 			}
 			if nextKey != "" {
-				if nextLink, ok = getNestedValue(body, nextKey).(string); !ok {
+				switch link := getNestedValue(body, nextKey).(type) {
+				case string:
+					nextLink = link
+				case nil:
+					nextLink = ""
+				default:
 					return nil, fmt.Errorf("unexpected type for nextKey")
 				}
 			}
