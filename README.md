@@ -20,9 +20,9 @@ Usage: ./unpage [OPTIONS] URL
 ## Examples
 
 ```
-unpage --param-page page --data-key repositories https://registry.opensuse.org/v2/_catalog?n=50
+unpage --data-key repositories https://registry.opensuse.org/v2/_catalog?n=50
 
 unpage --param-page page https://src.opensuse.org/api/v1/repos/issues/search?limit=1
 
-unpage --data-key issues_created --next-key pagination_issues_created.next --last-key pagination_issues_created.last 'https://code.opensuse.org/api/0/user/rbranco/issues?assignee=1&per_page=1'
+unpage --param-page page --data-key issues_created --next-key pagination_issues_created.next --last-key pagination_issues_created.last 'https://code.opensuse.org/api/0/user/rbranco/issues?assignee=1&per_page=1'
 ```
