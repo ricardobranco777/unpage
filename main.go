@@ -45,17 +45,14 @@ func getNextLastLinks(header string) (next, last string) {
 		var url, rel string
 		for _, piece := range strings.Split(chunk, ";") {
 			piece = strings.TrimSpace(piece)
-			if piece == "" {
-				continue
-			}
-			if piece[0] == '<' && piece[len(piece)-1] == '>' {
-				url = piece[1 : len(piece)-1]
+			if strings.HasPrefix(piece, "<") && strings.HasSuffix(piece, ">") {
+				url = strings.Trim(piece, "<>")
 				continue
 			}
 			parts := strings.SplitN(piece, "=", 2)
 			if len(parts) == 2 {
 				key, val := parts[0], strings.Trim(parts[1], `"`)
-				if strings.ToLower(key) == "rel" {
+				if key == "rel" {
 					rel = val
 				}
 			}
