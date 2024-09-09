@@ -16,7 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tomnomnom/linkheader"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -42,12 +41,29 @@ func getNestedValue(data map[string]any, key string) any {
 }
 
 func getNextLastLinks(header string) (next, last string) {
-	links := linkheader.Parse(header)
-	for _, link := range links {
-		if link.Rel == "next" {
-			next = link.URL
-		} else if link.Rel == "last" {
-			last = link.URL
+	for _, chunk := range strings.Split(header, ",") {
+		var url, rel string
+		for _, piece := range strings.Split(chunk, ";") {
+			piece = strings.TrimSpace(piece)
+			if piece == "" {
+				continue
+			}
+			if piece[0] == '<' && piece[len(piece)-1] == '>' {
+				url = piece[1 : len(piece)-1]
+				continue
+			}
+			parts := strings.SplitN(piece, "=", 2)
+			if len(parts) == 2 {
+				key, val := parts[0], strings.Trim(parts[1], `"`)
+				if strings.ToLower(key) == "rel" {
+					rel = val
+				}
+			}
+		}
+		if rel == "next" {
+			next = url
+		} else if rel == "last" {
+			last = url
 		}
 	}
 	return next, last
