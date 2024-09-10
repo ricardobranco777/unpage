@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -22,6 +22,8 @@ import (
 import flag "github.com/spf13/pflag"
 
 const version = "0.1.0"
+
+var logger *slog.Logger
 
 func getNestedValue(data map[string]any, key string) any {
 	keys := strings.Split(key, ".")
@@ -69,16 +71,16 @@ func getNextLastLinks(header string) (next, last string) {
 func logResponse(resp *http.Response) {
 	dump, err := httputil.DumpRequestOut(resp.Request, true)
 	if err != nil {
-		log.Print(err)
+		slog.Error("failed to dump request", slog.Any("error", err))
 	} else {
-		fmt.Fprintf(os.Stderr, "\n%s", string(dump))
+		slog.Debug("HTTP request", slog.String("request", string(dump)))
 	}
 
 	dump, err = httputil.DumpResponse(resp, true)
 	if err != nil {
-		log.Print(err)
+		slog.Error("failed to dump response", slog.Any("error", err))
 	} else {
-		fmt.Fprintf(os.Stderr, "\n%s\n", string(dump))
+		slog.Debug("HTTP response", slog.String("response", string(dump)))
 	}
 }
 
@@ -102,9 +104,11 @@ func getPage(ctx context.Context, client *http.Client, urlStr string, headers ma
 	if err != nil {
 		return nil, err
 	}
-	if os.Getenv("DEBUG") != "" {
+
+	if logger != nil && logger.Enabled(ctx, slog.LevelDebug) {
 		logResponse(resp)
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
@@ -276,9 +280,33 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 	return entries, nil
 }
 
+func configureLogging(logLevel string) {
+	var level slog.Level
+	switch logLevel {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		fmt.Fprintf(os.Stderr, "Invalid log level: %s\n", logLevel)
+		os.Exit(1)
+	}
+
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: level,
+	})
+	logger = slog.New(handler)
+	slog.SetDefault(logger)
+}
+
 func main() {
 	var headerValues []string
 	var paramPage, dataKey, nextKey, lastKey string
+	var logLevel string
 	var timeoutInt int
 
 	flag.Usage = func() {
@@ -291,6 +319,7 @@ func main() {
 	flag.StringVarP(&nextKey, "next-key", "N", "", "Key to access the next page link in the JSON response")
 	flag.StringVarP(&lastKey, "last-key", "L", "", "Key to access the last page link in the JSON response")
 	flag.IntVarP(&timeoutInt, "timeout", "t", 60, "Timeout")
+	flag.StringVarP(&logLevel, "log-level", "l", "warn", "Set the log level")
 
 	flag.Parse()
 	if flag.NArg() != 1 {
@@ -298,6 +327,9 @@ func main() {
 		os.Exit(1)
 	}
 	urlStr := flag.Args()[0]
+
+	// Configure the logger
+	configureLogging(logLevel)
 
 	headers := map[string]string{
 		"Accept":     "application/json",
