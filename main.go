@@ -71,16 +71,16 @@ func getNextLastLinks(header string) (next, last string) {
 func logResponse(resp *http.Response) {
 	dump, err := httputil.DumpRequestOut(resp.Request, true)
 	if err != nil {
-		slog.Error("failed to dump request", slog.Any("error", err))
+		logger.Error("failed to dump request", slog.Any("error", err))
 	} else {
-		slog.Debug("HTTP request", slog.String("request", string(dump)))
+		logger.Debug("HTTP request", slog.String("request", string(dump)))
 	}
 
 	dump, err = httputil.DumpResponse(resp, true)
 	if err != nil {
-		slog.Error("failed to dump response", slog.Any("error", err))
+		logger.Error("failed to dump response", slog.Any("error", err))
 	} else {
-		slog.Debug("HTTP response", slog.String("response", string(dump)))
+		logger.Debug("HTTP response", slog.String("response", string(dump)))
 	}
 }
 
