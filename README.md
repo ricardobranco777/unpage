@@ -9,12 +9,13 @@ Python version: https://github.com/ricardobranco777/py-unpage
 
 ```
 Usage: ./unpage [OPTIONS] URL
-  -D, --data-key string     Key to access the data in the JSON response
+  -D, --data-key string     key to access the data in the JSON response
   -H, --header strings      HTTP header (may be specified multiple times
-  -L, --last-key string     Key to access the last page link in the JSON response
-  -N, --next-key string     Key to access the next page link in the JSON response
-  -P, --param-page string   Name of the parameter that represents the page number
-  -t, --timeout int         Timeout (default 60)
+  -L, --last-key string     key to access the last page link in the JSON response
+  -N, --next-key string     key to access the next page link in the JSON response
+  -P, --param-page string   parameter that represents the page number
+  -t, --timeout int         timeout (default 60)
+      --version             print version and exit
 ```
 
 ## Examples

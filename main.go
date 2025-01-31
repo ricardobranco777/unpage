@@ -10,6 +10,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -284,24 +285,33 @@ func init() {
 }
 
 func main() {
-	var headerValues []string
-	var paramPage, dataKey, nextKey, lastKey string
-	var logLevel string
-	var timeoutInt int
+	var opts struct {
+		headers   []string
+		dataKey   string
+		lastKey   string
+		nextKey   string
+		paramPage string
+		timeout   int
+		version   bool
+	}
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] URL\n", os.Args[0])
 		flag.PrintDefaults()
 	}
-	flag.StringSliceVarP(&headerValues, "header", "H", nil, "HTTP header (may be specified multiple times")
-	flag.StringVarP(&paramPage, "param-page", "P", "", "Name of the parameter that represents the page number")
-	flag.StringVarP(&dataKey, "data-key", "D", "", "Key to access the data in the JSON response")
-	flag.StringVarP(&nextKey, "next-key", "N", "", "Key to access the next page link in the JSON response")
-	flag.StringVarP(&lastKey, "last-key", "L", "", "Key to access the last page link in the JSON response")
-	flag.IntVarP(&timeoutInt, "timeout", "t", 60, "Timeout")
-	flag.StringVarP(&logLevel, "log-level", "l", "warn", "Set the log level")
-
+	flag.StringSliceVarP(&opts.headers, "header", "H", nil, "HTTP header (may be specified multiple times")
+	flag.StringVarP(&opts.dataKey, "data-key", "D", "", "key to access the data in the JSON response")
+	flag.StringVarP(&opts.nextKey, "next-key", "N", "", "key to access the next page link in the JSON response")
+	flag.StringVarP(&opts.lastKey, "last-key", "L", "", "key to access the last page link in the JSON response")
+	flag.StringVarP(&opts.paramPage, "param-page", "P", "", "parameter that represents the page number")
+	flag.IntVarP(&opts.timeout, "timeout", "t", 60, "timeout")
+	flag.BoolVarP(&opts.version, "version", "", false, "print version and exit")
 	flag.Parse()
+
+	if opts.version {
+		fmt.Printf("unpage v%s %v %s/%s\n", version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
 	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(1)
@@ -314,7 +324,7 @@ func main() {
 		"Accept":     "application/json",
 		"User-Agent": "unpage/" + version,
 	}
-	for _, header := range headerValues {
+	for _, header := range opts.headers {
 		parts := strings.SplitN(header, ":", 2)
 		if len(parts) != 2 {
 			log.Printf("Invalid header: %s", header)
@@ -323,11 +333,11 @@ func main() {
 		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
-	timeout := time.Duration(timeoutInt)
+	timeout := time.Duration(opts.timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout*time.Second)
 	defer cancel()
 
-	results, err := unpage(ctx, urlStr, headers, paramPage, dataKey, nextKey, lastKey, timeout)
+	results, err := unpage(ctx, urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey, timeout)
 	if err != nil {
 		log.Print(err)
 		os.Exit(1)
