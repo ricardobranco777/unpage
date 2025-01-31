@@ -278,6 +278,11 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 	return entries, nil
 }
 
+func init() {
+	log.SetFlags(0)
+	log.SetPrefix("ERROR: ")
+}
+
 func main() {
 	var headerValues []string
 	var paramPage, dataKey, nextKey, lastKey string
