@@ -335,7 +335,7 @@ func main() {
 
 	output, err := json.Marshal(results)
 	if err != nil {
-		log.Printf(err)
+		log.Print(err)
 		os.Exit(1)
 	}
 	fmt.Println(string(output))
