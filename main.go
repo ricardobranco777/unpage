@@ -333,8 +333,8 @@ func main() {
 		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
-	timeout := time.Duration(opts.timeout)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout*time.Second)
+	timeout := time.Duration(opts.timeout) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	results, err := unpage(ctx, urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey, timeout)
