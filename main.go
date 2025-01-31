@@ -316,6 +316,10 @@ func main() {
 	}
 	for _, header := range headerValues {
 		parts := strings.SplitN(header, ":", 2)
+		if len(parts) != 2 {
+			log.Printf("Invalid header: %s", header)
+			os.Exit(1)
+		}
 		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
@@ -325,13 +329,13 @@ func main() {
 
 	results, err := unpage(ctx, urlStr, headers, paramPage, dataKey, nextKey, lastKey, timeout)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+		log.Print(err)
 		os.Exit(1)
 	}
 
 	output, err := json.Marshal(results)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+		log.Printf(err)
 		os.Exit(1)
 	}
 	fmt.Println(string(output))
