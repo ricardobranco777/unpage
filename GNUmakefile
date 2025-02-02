@@ -3,7 +3,7 @@ BIN	= unpage
 all:	$(BIN)
 
 $(BIN): *.go
-	@CGO_ENABLED=0 go build
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -buildid=" -buildmode=pie
 
 .PHONY: test
 test:
