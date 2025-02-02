@@ -327,8 +327,7 @@ func main() {
 	for _, header := range opts.headers {
 		parts := strings.SplitN(header, ":", 2)
 		if len(parts) != 2 {
-			log.Printf("Invalid header: %s", header)
-			os.Exit(1)
+			log.Fatalf("Invalid header: %s", header)
 		}
 		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
@@ -339,14 +338,12 @@ func main() {
 
 	results, err := unpage(ctx, urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey, timeout)
 	if err != nil {
-		log.Print(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	output, err := json.Marshal(results)
 	if err != nil {
-		log.Print(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	fmt.Println(string(output))
 }
