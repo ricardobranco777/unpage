@@ -17,8 +17,8 @@ all:	$(BIN)
 
 .PHONY: test
 test:
-	$(GO) vet
 	staticcheck
+	$(GO) vet
 	$(GO) test -v
 
 .PHONY: clean
@@ -27,6 +27,6 @@ clean:
 
 .PHONY: gen
 gen:
-	rm -f go.mod go.sum
+	$(RM) go.mod go.sum
 	$(GO) mod init $(BIN)
 	$(GO) mod tidy
