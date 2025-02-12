@@ -21,7 +21,7 @@ func TestUnpage_SinglePage(t *testing.T) {
 				map[string]any{"id": 2, "name": "Item 2"},
 			},
 		}
-		json.NewEncoder(w).Encode(data)
+		_ = json.NewEncoder(w).Encode(data)
 	})
 
 	server := httptest.NewServer(handler)
@@ -86,7 +86,7 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 					map[string]any{"id": 2, "name": "Item 2"},
 				},
 			}
-			json.NewEncoder(w).Encode(data)
+			_ = json.NewEncoder(w).Encode(data)
 		} else if page == "2" {
 			data := map[string]any{
 				"data": []any{
@@ -94,7 +94,7 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 					map[string]any{"id": 4, "name": "Item 4"},
 				},
 			}
-			json.NewEncoder(w).Encode(data)
+			_ = json.NewEncoder(w).Encode(data)
 		}
 	})
 
@@ -154,7 +154,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 			t.Fatalf("Unexpected page number: %d", page)
 		}
 
-		json.NewEncoder(w).Encode(data)
+		_ = json.NewEncoder(w).Encode(data)
 	})
 
 	server := httptest.NewServer(handler)
@@ -234,7 +234,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 			t.Fatalf("Unexpected page number: %d", page)
 		}
 
-		json.NewEncoder(w).Encode(data)
+		_ = json.NewEncoder(w).Encode(data)
 	})
 
 	server := httptest.NewServer(handler)
