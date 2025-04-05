@@ -14,6 +14,7 @@ endif
 $(BIN): *.go
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -trimpath -ldflags="-s -w -buildid=" -buildmode=pie
 
+.PHONY: all
 all:	$(BIN)
 
 .PHONY: build
@@ -23,7 +24,6 @@ build:
 	$(DOCKER) cp $$container:/usr/local/bin/$(BIN) . && \
 	$(DOCKER) rm -vf $$container && \
 	$(DOCKER) rmi $$image
-
 
 .PHONY: test
 test:
