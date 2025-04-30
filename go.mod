@@ -1,4 +1,4 @@
-module unpage
+module github.com/ricardobranco777/unpage
 
 go 1.22
 

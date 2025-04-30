@@ -43,5 +43,5 @@ clean:
 .PHONY: gen
 gen:
 	$(RM) go.mod go.sum
-	$(GO) mod init $(BIN)
+	$(GO) mod init github.com/ricardobranco777/$(BIN)
 	$(GO) mod tidy
