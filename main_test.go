@@ -28,8 +28,6 @@ func TestUnpage_SinglePage(t *testing.T) {
 	defer server.Close()
 
 	// Test unpage function with single page response
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	headers := map[string]string{}
 	paramPage := "page"
@@ -37,7 +35,7 @@ func TestUnpage_SinglePage(t *testing.T) {
 	nextKey := ""
 	lastKey := ""
 
-	entries, err := unpage(ctx, server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -57,8 +55,6 @@ func TestUnpage_ErrorResponse(t *testing.T) {
 	defer server.Close()
 
 	// Test unpage function with an error response
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	headers := map[string]string{}
 	paramPage := "page"
@@ -66,7 +62,7 @@ func TestUnpage_ErrorResponse(t *testing.T) {
 	nextKey := ""
 	lastKey := ""
 
-	_, err := unpage(ctx, server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	_, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
 	if err == nil {
 		t.Fatalf("Expected error, got none")
 	}
@@ -101,16 +97,13 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	headers := map[string]string{}
 	paramPage := "page"
 	dataKey := "data"
 	nextKey := ""
 	lastKey := ""
 
-	entries, err := unpage(ctx, server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -160,9 +153,6 @@ func TestUnpage_MultiplePages(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	headers := map[string]string{}
 	paramPage := "page"
 	dataKey := "data"
@@ -173,7 +163,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 	baseURL := server.URL
 
 	// Run the unpage function
-	entries, err := unpage(ctx, baseURL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(baseURL, headers, paramPage, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -240,9 +230,6 @@ func TestUnpage_WithLastKey(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	headers := map[string]string{}
 	paramPage := "page"
 	dataKey := "data"
@@ -253,7 +240,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 	baseURL := server.URL
 
 	// Run the unpage function
-	entries, err := unpage(ctx, baseURL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(baseURL, headers, paramPage, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

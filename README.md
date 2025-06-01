@@ -14,7 +14,6 @@ Usage: ./unpage [OPTIONS] URL
   -L, --last-key string     key to access the last page link in the JSON response
   -N, --next-key string     key to access the next page link in the JSON response
   -P, --param-page string   parameter that represents the page number
-  -t, --timeout int         timeout (default 60)
       --version             print version and exit
 ```
 
