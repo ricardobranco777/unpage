@@ -116,11 +116,9 @@ func getPage(ctx context.Context, client *http.Client, urlStr string, headers ma
 	return resp, nil
 }
 
-func unpage(ctx context.Context, urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string, timeout time.Duration) ([]any, error) {
+func unpage(ctx context.Context, urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string) ([]any, error) {
 	// Fetch the first page
-	client := &http.Client{
-		Timeout: timeout * time.Second,
-	}
+	client := &http.Client{};
 	params := make(map[string]string)
 	if paramPage != "" {
 		params[paramPage] = "1"
@@ -299,7 +297,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] URL\n", os.Args[0])
 		flag.PrintDefaults()
 	}
-	flag.StringSliceVarP(&opts.headers, "header", "H", nil, "HTTP header (may be specified multiple times")
+	flag.StringSliceVarP(&opts.headers, "header", "H", nil, "HTTP header (may be specified multiple times)")
 	flag.StringVarP(&opts.dataKey, "data-key", "D", "", "key to access the data in the JSON response")
 	flag.StringVarP(&opts.nextKey, "next-key", "N", "", "key to access the next page link in the JSON response")
 	flag.StringVarP(&opts.lastKey, "last-key", "L", "", "key to access the last page link in the JSON response")
@@ -314,7 +312,7 @@ func main() {
 	}
 	if flag.NArg() != 1 {
 		flag.Usage()
-		os.Exit(1)
+		os.Exit(2)
 	}
 	urlStr := flag.Args()[0]
 
@@ -336,7 +334,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	results, err := unpage(ctx, urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey, timeout)
+	results, err := unpage(ctx, urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey)
 	if err != nil {
 		log.Fatal(err)
 	}
