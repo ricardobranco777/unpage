@@ -118,7 +118,7 @@ func getPage(ctx context.Context, client *http.Client, urlStr string, headers ma
 
 func unpage(ctx context.Context, urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string) ([]any, error) {
 	// Fetch the first page
-	client := &http.Client{};
+	client := &http.Client{}
 	params := make(map[string]string)
 	if paramPage != "" {
 		params[paramPage] = "1"
@@ -143,8 +143,13 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 		}
 		// Pagination done via data
 		if nextKey != "" {
-			if nextLink, ok = getNestedValue(body, nextKey).(string); !ok {
-				return nil, fmt.Errorf("unexpected value for nextKey")
+			switch link := getNestedValue(body, nextKey).(type) {
+			case string:
+				nextLink = link
+			case nil:
+				nextLink = ""
+			default:
+				return nil, fmt.Errorf("unexpected type for nextKey: %T", link)
 			}
 		}
 		if lastKey != "" {
@@ -259,7 +264,7 @@ func unpage(ctx context.Context, urlStr string, headers map[string]string, param
 				case nil:
 					nextLink = ""
 				default:
-					return nil, fmt.Errorf("unexpected type for nextKey")
+					return nil, fmt.Errorf("unexpected type for nextKey: %T", link)
 				}
 			}
 		case []any:
@@ -323,11 +328,13 @@ func main() {
 		"User-Agent": "unpage/" + version,
 	}
 	for _, header := range opts.headers {
-		parts := strings.SplitN(header, ":", 2)
-		if len(parts) != 2 {
+		idx := strings.Index(header, ":")
+		if idx <= 0 {
 			log.Fatalf("Invalid header: %s", header)
 		}
-		headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		key := strings.TrimSpace(header[:idx])
+		val := strings.TrimSpace(header[idx+1:])
+		headers[key] = val
 	}
 
 	timeout := time.Duration(opts.timeout) * time.Second
