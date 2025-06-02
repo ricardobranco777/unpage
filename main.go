@@ -116,12 +116,49 @@ func getPage(ctx context.Context, client *http.Client, urlStr string, headers ma
 	return resp, nil
 }
 
+func getString(body map[string]any, key string) (string, error) {
+	if key == "" {
+		return "", nil
+	}
+
+	var str string
+	switch v := getNestedValue(body, key).(type) {
+	case string:
+		str = v
+	case nil:
+		str = ""
+	default:
+		return "", fmt.Errorf("unexpected type for %s: %T", key, v)
+	}
+
+	return str, nil
+}
+
+func getEntries(rawBody any, dataKey string) ([]any, error) {
+	var entries []any
+	var ok bool
+
+	switch body := rawBody.(type) {
+	case map[string]any:
+		if entries, ok = getNestedValue(body, dataKey).([]any); !ok {
+			return nil, fmt.Errorf("unexpected type for %s: %T", dataKey, dataKey)
+		}
+	case []any:
+		entries = body
+	default:
+		return nil, fmt.Errorf("wrong JSON type %T", body)
+	}
+
+	return entries, nil
+}
+
 func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string) ([]any, error) {
-	// Fetch the first page
 	client := &http.Client{
 		Timeout: 120 * time.Second,
 	}
 	ctx := context.Background()
+
+	// Fetch the first page
 	params := make(map[string]string)
 	if paramPage != "" {
 		params[paramPage] = "1"
@@ -130,6 +167,7 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 	if err != nil {
 		return nil, err
 	}
+
 	var rawBody any
 	if err := json.NewDecoder(resp.Body).Decode(&rawBody); err != nil {
 		return nil, err
@@ -138,32 +176,18 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 
 	var nextLink, lastLink string
 	var entries []any
-	var ok bool
-	switch body := rawBody.(type) {
-	case map[string]any:
-		if entries, ok = getNestedValue(body, dataKey).([]any); !ok {
-			return nil, fmt.Errorf("unexpected type for dataKey")
-		}
+
+	if entries, err = getEntries(rawBody, dataKey); err != nil {
+		return nil, err
+	}
+	if body, ok := rawBody.(map[string]any); ok {
 		// Pagination done via data
-		if nextKey != "" {
-			switch link := getNestedValue(body, nextKey).(type) {
-			case string:
-				nextLink = link
-			case nil:
-				nextLink = ""
-			default:
-				return nil, fmt.Errorf("unexpected type for nextKey: %T", link)
-			}
+		if nextLink, err = getString(body, nextKey); err != nil {
+			return nil, err
 		}
-		if lastKey != "" {
-			if lastLink, ok = getNestedValue(body, lastKey).(string); !ok {
-				return nil, fmt.Errorf("unexpected value for lastKey")
-			}
+		if lastLink, err = getString(body, lastKey); err != nil {
+			return nil, err
 		}
-	case []any:
-		entries = body
-	default:
-		return nil, fmt.Errorf("wrong type %T", body)
 	}
 
 	// Pagination done via Link headers
@@ -171,7 +195,7 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 		nextLink, lastLink = getNextLastLinks(resp.Header.Get("Link"))
 	}
 
-	// If last Link is available, calculate the number of pages
+	// If lastLink is available, calculate the number of pages
 	if lastLink != "" {
 		if strings.HasPrefix(lastLink, "/") {
 			lastLink = fmt.Sprintf("%s://%s%s", resp.Request.URL.Scheme, resp.Request.URL.Host, lastLink)
@@ -193,6 +217,7 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 
 		// Fetch remaining pages concurrently
 		for page := 2; page <= lastPage; page++ {
+			page := page
 			g.Go(func() error {
 				params := map[string]string{
 					paramPage: strconv.Itoa(page),
@@ -202,22 +227,16 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 					return err
 				}
 				defer resp.Body.Close()
+
+				var entries []any
 				var rawBody any
+
 				if err := json.NewDecoder(resp.Body).Decode(&rawBody); err != nil {
 					return err
 				}
 
-				var entries []any
-				var ok bool
-				switch body := rawBody.(type) {
-				case map[string]any:
-					if entries, ok = getNestedValue(body, dataKey).([]any); !ok {
-						return fmt.Errorf("unexpected type for dataKey")
-					}
-				case []any:
-					entries = body
-				default:
-					return fmt.Errorf("wrong type %T", body)
+				if entries, err = getEntries(rawBody, dataKey); err != nil {
+					return err
 				}
 
 				pages[page-1] = entries
@@ -231,11 +250,11 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 		}
 
 		// Flatten the pages into a single slice
-		var allEntries []any
+		var all []any
 		for i := range pages {
-			allEntries = append(allEntries, pages[i]...)
+			all = append(all, pages[i]...)
 		}
-		return allEntries, nil
+		return all, nil
 
 	}
 
@@ -255,25 +274,14 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 		}
 
 		var more []any
-		switch body := rawBody.(type) {
-		case map[string]any:
-			if more, ok = getNestedValue(body, dataKey).([]any); !ok {
-				return nil, fmt.Errorf("unexpected type for dataKey")
+
+		if more, err = getEntries(rawBody, dataKey); err != nil {
+			return nil, err
+		}
+		if body, ok := rawBody.(map[string]any); ok {
+			if nextKey, err = getString(body, nextKey); err != nil {
+				return nil, err
 			}
-			if nextKey != "" {
-				switch link := getNestedValue(body, nextKey).(type) {
-				case string:
-					nextLink = link
-				case nil:
-					nextLink = ""
-				default:
-					return nil, fmt.Errorf("unexpected type for nextKey: %T", link)
-				}
-			}
-		case []any:
-			more = body
-		default:
-			return nil, fmt.Errorf("wrong type %T", body)
 		}
 
 		if nextKey == "" {
