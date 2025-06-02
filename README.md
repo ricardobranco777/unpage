@@ -9,6 +9,7 @@ Python version: https://github.com/ricardobranco777/py-unpage
 
 ```
 Usage: ./unpage [OPTIONS] URL
+  -C, --count-key string    key to access the count in the JSON response
   -D, --data-key string     key to access the data in the JSON response
   -H, --header strings      HTTP header (may be specified multiple times
   -L, --last-key string     key to access the last page link in the JSON response

@@ -116,22 +116,40 @@ func getPage(ctx context.Context, client *http.Client, urlStr string, headers ma
 	return resp, nil
 }
 
+func getInt(body map[string]any, key string) (int, error) {
+	if key == "" {
+		return 0, nil
+	}
+
+	switch v := getNestedValue(body, key).(type) {
+	case int:
+		return v, nil
+	case int64:
+		return int(v), nil
+	case json.Number:
+		n, err := v.Int64()
+		if err != nil {
+			return 0, fmt.Errorf("invalid value for %s: %v", key, err)
+		}
+		return int(n), nil
+	default:
+		return 0, fmt.Errorf("unexpected type for %s: %T", key, v)
+	}
+}
+
 func getString(body map[string]any, key string) (string, error) {
 	if key == "" {
 		return "", nil
 	}
 
-	var str string
 	switch v := getNestedValue(body, key).(type) {
 	case string:
-		str = v
+		return v, nil
 	case nil:
-		str = ""
+		return "", nil
 	default:
 		return "", fmt.Errorf("unexpected type for %s: %T", key, v)
 	}
-
-	return str, nil
 }
 
 func getEntries(rawBody any, dataKey string) ([]any, error) {
@@ -152,7 +170,7 @@ func getEntries(rawBody any, dataKey string) ([]any, error) {
 	return entries, nil
 }
 
-func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKey, lastKey string) ([]any, error) {
+func unpage(urlStr string, headers map[string]string, paramPage, countKey, dataKey, nextKey, lastKey string) ([]any, error) {
 	client := &http.Client{
 		Timeout: 120 * time.Second,
 	}
@@ -167,15 +185,16 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var rawBody any
 	if err := json.NewDecoder(resp.Body).Decode(&rawBody); err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	var nextLink, lastLink string
 	var entries []any
+	var count int
 
 	if entries, err = getEntries(rawBody, dataKey); err != nil {
 		return nil, err
@@ -188,6 +207,9 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 		if lastLink, err = getString(body, lastKey); err != nil {
 			return nil, err
 		}
+		if count, err = getInt(body, countKey); err != nil {
+			return nil, err
+		}
 	}
 
 	// Pagination done via Link headers
@@ -196,6 +218,9 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 	}
 
 	// If lastLink is available, calculate the number of pages
+
+	var totalPages int
+
 	if lastLink != "" {
 		if strings.HasPrefix(lastLink, "/") {
 			lastLink = fmt.Sprintf("%s://%s%s", resp.Request.URL.Scheme, resp.Request.URL.Host, lastLink)
@@ -204,19 +229,29 @@ func unpage(urlStr string, headers map[string]string, paramPage, dataKey, nextKe
 		if err != nil {
 			return nil, err
 		}
-		lastPage, err := strconv.Atoi(lastURL.Query().Get(paramPage))
-		if err != nil {
+		if totalPages, err = strconv.Atoi(lastURL.Query().Get(paramPage)); err != nil {
 			return nil, err
 		}
+	} else if count > 0 {
+		pageSize := len(entries)
+		if pageSize == 0 || count <= pageSize {
+			return entries, nil
+		}
+		totalPages = count / pageSize
+		if count%pageSize != 0 {
+			totalPages++
+		}
+	}
 
-		pages := make([][]any, lastPage)
+	if totalPages > 0 {
+		pages := make([][]any, totalPages)
 		pages[0] = entries
 
 		g, ctx := errgroup.WithContext(ctx)
 		g.SetLimit(50)
 
 		// Fetch remaining pages concurrently
-		for page := 2; page <= lastPage; page++ {
+		for page := 2; page <= totalPages; page++ {
 			page := page
 			g.Go(func() error {
 				params := map[string]string{
@@ -301,6 +336,7 @@ func init() {
 func main() {
 	var opts struct {
 		headers   []string
+		countKey  string
 		dataKey   string
 		lastKey   string
 		nextKey   string
@@ -313,6 +349,7 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.StringSliceVarP(&opts.headers, "header", "H", nil, "HTTP header (may be specified multiple times)")
+	flag.StringVarP(&opts.countKey, "count-key", "C", "", "key to access the count in the JSON response")
 	flag.StringVarP(&opts.dataKey, "data-key", "D", "", "key to access the data in the JSON response")
 	flag.StringVarP(&opts.nextKey, "next-key", "N", "", "key to access the next page link in the JSON response")
 	flag.StringVarP(&opts.lastKey, "last-key", "L", "", "key to access the last page link in the JSON response")
@@ -346,7 +383,7 @@ func main() {
 		headers[key] = val
 	}
 
-	results, err := unpage(urlStr, headers, opts.paramPage, opts.dataKey, opts.nextKey, opts.lastKey)
+	results, err := unpage(urlStr, headers, opts.paramPage, opts.countKey, opts.dataKey, opts.nextKey, opts.lastKey)
 	if err != nil {
 		log.Fatal(err)
 	}

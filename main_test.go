@@ -31,11 +31,12 @@ func TestUnpage_SinglePage(t *testing.T) {
 
 	headers := map[string]string{}
 	paramPage := "page"
+	countKey := ""
 	dataKey := "data"
 	nextKey := ""
 	lastKey := ""
 
-	entries, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(server.URL, headers, paramPage, countKey, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -58,11 +59,12 @@ func TestUnpage_ErrorResponse(t *testing.T) {
 
 	headers := map[string]string{}
 	paramPage := "page"
+	countKey := ""
 	dataKey := "data"
 	nextKey := ""
 	lastKey := ""
 
-	_, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	_, err := unpage(server.URL, headers, paramPage, countKey, dataKey, nextKey, lastKey)
 	if err == nil {
 		t.Fatalf("Expected error, got none")
 	}
@@ -99,11 +101,12 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 
 	headers := map[string]string{}
 	paramPage := "page"
+	countKey := ""
 	dataKey := "data"
 	nextKey := ""
 	lastKey := ""
 
-	entries, err := unpage(server.URL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(server.URL, headers, paramPage, countKey, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -155,6 +158,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 
 	headers := map[string]string{}
 	paramPage := "page"
+	countKey := ""
 	dataKey := "data"
 	nextKey := "links.next"
 	lastKey := ""
@@ -163,7 +167,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 	baseURL := server.URL
 
 	// Run the unpage function
-	entries, err := unpage(baseURL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(baseURL, headers, paramPage, countKey, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -232,6 +236,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 
 	headers := map[string]string{}
 	paramPage := "page"
+	countKey := ""
 	dataKey := "data"
 	nextKey := "links.next"
 	lastKey := "links.last"
@@ -240,7 +245,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 	baseURL := server.URL
 
 	// Run the unpage function
-	entries, err := unpage(baseURL, headers, paramPage, dataKey, nextKey, lastKey)
+	entries, err := unpage(baseURL, headers, paramPage, countKey, dataKey, nextKey, lastKey)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
