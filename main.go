@@ -58,9 +58,10 @@ func getNextLastLinks(header string) (next, last string) {
 				}
 			}
 		}
-		if rel == "next" {
+		switch rel {
+		case "next":
 			next = url
-		} else if rel == "last" {
+		case "last":
 			last = url
 		}
 	}

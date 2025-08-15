@@ -76,7 +76,8 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 		if page == "" {
 			page = "1"
 		}
-		if page == "1" {
+		switch page {
+		case "1":
 			w.Header().Set("Link", `</?page=2>; rel="next"`)
 			data := map[string]any{
 				"data": []any{
@@ -85,7 +86,7 @@ func TestUnpage_PaginationViaLinkHeaders(t *testing.T) {
 				},
 			}
 			_ = json.NewEncoder(w).Encode(data)
-		} else if page == "2" {
+		case "2":
 			data := map[string]any{
 				"data": []any{
 					map[string]any{"id": 3, "name": "Item 3"},
@@ -126,7 +127,9 @@ func TestUnpage_MultiplePages(t *testing.T) {
 			scheme = "https"
 		}
 
-		if page == 1 || page == 0 {
+		switch (page) {
+		case 0:
+		case 1:
 			// First page, return first set of entries with full URL for "next"
 			data = map[string]any{
 				"data": []any{
@@ -137,7 +140,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 					"next": fmt.Sprintf("%s://%s?page=2", scheme, r.Host), // Full URL for the next page
 				},
 			}
-		} else if page == 2 {
+		case 2:
 			// Second page, return remaining entries, no "next"
 			data = map[string]any{
 				"data": []any{
@@ -146,7 +149,7 @@ func TestUnpage_MultiplePages(t *testing.T) {
 				},
 				"links": map[string]any{"next": nil},
 			}
-		} else {
+		default:
 			t.Fatalf("Unexpected page number: %d", page)
 		}
 
@@ -188,7 +191,9 @@ func TestUnpage_WithLastKey(t *testing.T) {
 			scheme = "https"
 		}
 
-		if page == 1 || page == 0 {
+		switch (page) {
+		case 0:
+		case 1:
 			// First page, return first set of entries with "next" and "last"
 			data = map[string]any{
 				"data": []any{
@@ -200,7 +205,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 					"last": fmt.Sprintf("%s://%s?page=3", scheme, r.Host), // Full URL for the last page
 				},
 			}
-		} else if page == 2 {
+		case 2:
 			// Second page, return more entries with "next" and "last"
 			data = map[string]any{
 				"data": []any{
@@ -212,7 +217,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 					"last": fmt.Sprintf("%s://%s?page=3", scheme, r.Host), // Full URL for the last page
 				},
 			}
-		} else if page == 3 {
+		case 3:
 			// Last page, return remaining entries, no "next"
 			data = map[string]any{
 				"data": []any{
@@ -224,7 +229,7 @@ func TestUnpage_WithLastKey(t *testing.T) {
 					"last": fmt.Sprintf("%s://%s?page=3", scheme, r.Host),
 				},
 			}
-		} else {
+		default:
 			t.Fatalf("Unexpected page number: %d", page)
 		}
 
