@@ -42,9 +42,9 @@ func getNestedValue(data map[string]any, key string) any {
 }
 
 func getNextLastLinks(header string) (next, last string) {
-	for _, chunk := range strings.Split(header, ",") {
+	for chunk := range strings.SplitSeq(header, ",") {
 		var url, rel string
-		for _, piece := range strings.Split(chunk, ";") {
+		for piece := range strings.SplitSeq(chunk, ";") {
 			piece = strings.TrimSpace(piece)
 			if strings.HasPrefix(piece, "<") && strings.HasSuffix(piece, ">") {
 				url = strings.Trim(piece, "<>")
